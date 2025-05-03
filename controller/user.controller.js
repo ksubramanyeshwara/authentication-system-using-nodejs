@@ -6,6 +6,7 @@ import crypto from "crypto";
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import responseHandler from "../utils/responseHandler.util.js";
 
 const registerUser = async (req, res) => {
   // get data - email, password, name
@@ -22,9 +23,7 @@ const registerUser = async (req, res) => {
 
   // validate
   if (!name || !email || !password) {
-    return res.status(400).json({
-      message: "All fields are required",
-    });
+    responseHandler(res, 400, "Name, email and password are required");
   }
 
   // check if user already exists
@@ -150,9 +149,7 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({
-      message: "All fields are required",
-    });
+    responseHandler(res, 400, "All fields are required");
   }
 
   try {
@@ -160,17 +157,14 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({
-        message: "Invalid email or password",
-      });
+      responseHandler(res, 400, "Invalid email or password");
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(400).json({
-        message: "Invalid email or password",
-      });
+      // if password doesn't match, send a message
+      responseHandler(res, 400, "Invalid email or password");
     }
 
     // check user verified or not, if not send a message to verify
@@ -194,9 +188,8 @@ const login = async (req, res) => {
     res.cookie("token", jwtToken, cookieOPtions);
     console.log("Login successful"); // Debugging log
 
-    res.status(200).json({
-      success: true,
-      message: "Login Successful",
+    // send response
+    responseHandler(res, 200, "Login successful", {
       jwtToken,
       user: {
         id: user._id,
@@ -206,10 +199,7 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error("Error during login:", error); // Debugging log
-    res.status(500).json({
-      message: "An error occurred during login",
-      error,
-    });
+    responseHandler(res, 500, "An error occurred during login", error);
   }
 };
 
